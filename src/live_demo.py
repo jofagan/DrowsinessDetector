@@ -131,7 +131,7 @@ def _draw_overlay(frame, state_text, closed_dur, alert, fps):
 
 
 def run(ckpt_path=DEFAULT_CKPT, camera=0, threshold=0.5, closed_seconds=1.5,
-        face_model=DEFAULT_FACE_MODEL):
+        open_grace=0.3, face_model=DEFAULT_FACE_MODEL):
     """Open the webcam and run the real-time detection/alert loop until quit."""
     device = get_device()
     print(f"Device: {device}")
@@ -146,6 +146,7 @@ def run(ckpt_path=DEFAULT_CKPT, camera=0, threshold=0.5, closed_seconds=1.5,
         )
 
     closed_since = None      # monotonic time eyes first went closed, else None
+    last_closed_t = 0.0      # last frame the eyes were seen closed (for the grace window)
     alerting = False         # whether we are currently in an alert (for one-shot bell)
     last_ts = -1             # strictly-increasing timestamp for detect_for_video
     prev_t = time.monotonic()
@@ -177,8 +178,11 @@ def run(ckpt_path=DEFAULT_CKPT, camera=0, threshold=0.5, closed_seconds=1.5,
 
             now = time.monotonic()
             if closed:
-                closed_since = closed_since or now
-            else:
+                if closed_since is None:
+                    closed_since = now
+                last_closed_t = now
+            elif closed_since is not None and (now - last_closed_t) > open_grace:
+                # eyes have been open past the grace window -> reset the closed timer
                 closed_since = None
             closed_dur = (now - closed_since) if closed_since is not None else 0.0
             alert = closed_dur >= closed_seconds
@@ -207,13 +211,16 @@ def main():
     p.add_argument("--threshold", type=float, default=0.5,
                    help="Mean closed-probability above which the eyes count as closed.")
     p.add_argument("--closed-seconds", type=float, default=1.5,
-                   help="Continuous closed duration that triggers the alert.")
+                   help="Closed duration that triggers the alert (brief flickers tolerated).")
+    p.add_argument("--open-grace", type=float, default=0.3,
+                   help="Eyes-open flickers up to this many seconds don't reset the timer.")
     p.add_argument("--face-model", type=Path, default=DEFAULT_FACE_MODEL,
                    help="Path to the MediaPipe face_landmarker.task asset.")
     args = p.parse_args()
 
     run(ckpt_path=args.ckpt, camera=args.camera, threshold=args.threshold,
-        closed_seconds=args.closed_seconds, face_model=args.face_model)
+        closed_seconds=args.closed_seconds, open_grace=args.open_grace,
+        face_model=args.face_model)
 
 
 if __name__ == "__main__":
