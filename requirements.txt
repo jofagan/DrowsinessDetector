@@ -1,0 +1,12 @@
+# Direct dependencies for the drowsiness detector.
+# Install:  pip install -r requirements.txt
+torch==2.13.0
+torchvision==0.28.0   # ImageFolder + transforms for the eye dataset (pulls in Pillow)
+numpy==2.5.1
+mediapipe==0.10.35    # live_demo: FaceLandmarker (Tasks API); provides cv2 via opencv-contrib-python
+Pillow==12.3.0        # PIL.Image in live_demo preprocessing (also a torchvision dep)
+
+# Note: do NOT also install opencv-python — mediapipe pulls opencv-contrib-python and
+# having both cv2 variants conflicts. live_demo also needs the face-landmark asset:
+#   curl -fsSL -o models/face_landmarker.task \
+#     https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task

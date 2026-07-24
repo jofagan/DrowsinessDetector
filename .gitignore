@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtualenv
+.venv/
+
+# IDE / OS
+.idea/
+.DS_Store
+
+# Dataset image folders (large; recreate with the data/ helper scripts + readme)
+/data/train/
+/data/val/
+/data/test/
+
+# MediaPipe face-landmark asset (downloadable; live_demo prints the curl command)
+models/*.task
